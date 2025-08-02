@@ -11,6 +11,24 @@ This monorepo contains two main services:
 
 ## 🚀 Quick Start
 
+**TL;DR: Get everything running in 3 commands:**
+
+```bash
+git clone <your-repo-url> && cd AIEcom
+npm install && cd aiecom && npm install && cd ../recommendation-engine && pip install -r requirements.txt && cd ..
+npm run dev  # Starts both frontend and AI service!
+```
+
+**Then visit:**
+
+- 🌐 **Frontend**: `http://localhost:3000`
+- 🤖 **AI API**: `http://localhost:5000/health`
+- 📊 **Admin Panel**: `http://localhost:3000/admin`
+
+---
+
+## 📋 Detailed Setup
+
 ### Prerequisites
 
 - **Node.js 18+** (for Next.js frontend)
@@ -25,37 +43,69 @@ git clone <your-repo-url>
 cd AIEcom
 ```
 
-### 2. Setup Frontend (Next.js)
+### 2. Install Dependencies
 
 ```bash
+# Root level (installs concurrently for running both services)
+npm install
+
+# Frontend dependencies
 cd aiecom
 npm install
-cp .env.local.example .env.local  # Configure your MongoDB URI
-npm run seed                      # Add sample products
-npm run dev                       # Starts on http://localhost:3000
-```
 
-### 3. Setup Recommendation Engine (Python)
-
-```bash
+# Python dependencies
 cd ../recommendation-engine
 pip install -r requirements.txt
-python app.py                     # Starts on http://localhost:5000
 ```
 
-### 4. Setup MongoDB
+### 3. Start Both Services (Single Command!)
 
-**Option A: Local MongoDB**
+```bash
+# From root directory - starts both Next.js and Python services
+npm run dev
+```
+
+This will start:
+
+- ✅ Next.js frontend on `http://localhost:3000`
+- ✅ Python recommendation API on `http://localhost:5000`
+
+**Alternative: Start services individually**
+
+```bash
+# Terminal 1: Next.js
+npm run dev:frontend
+
+# Terminal 2: Python API  
+npm run dev:api
+```
+
+### 4. Setup Database & Seed Data
+
+#### Option A: Local MongoDB
 
 ```bash
 mongod  # Start MongoDB service
 ```
 
-**Option B: MongoDB Atlas**
+#### Option B: MongoDB Atlas
 
 1. Create account at [MongoDB Atlas](https://www.mongodb.com/atlas)
-2. Create cluster and get connection string
+2. Create cluster and get connection string  
 3. Update `MONGODB_URI` in `aiecom/.env.local`
+
+#### Seed with Sample Products
+
+```bash
+# Option 1: API endpoint (easiest)
+curl -X POST http://localhost:3000/api/seed
+
+# Option 2: Script  
+npm run seed
+
+# Option 3: Admin panel
+# Visit http://localhost:3000/admin
+```
 
 ## 📁 Project Structure
 
@@ -139,23 +189,31 @@ graph TB
 
 ## 🛠️ Development Commands
 
-### Frontend (aiecom/)
+### Root Level (Recommended)
+
+```bash
+npm run dev              # 🚀 Start both frontend + AI API
+npm run dev:frontend     # Start only Next.js frontend
+npm run dev:api          # Start only Python recommendation API
+npm run seed             # Seed database with sample products
+npm run test             # Run all tests
+npm run docker:up        # Start with Docker Compose
+```
+
+### Frontend Only (aiecom/)
 
 ```bash
 npm run dev        # Start development server
 npm run build      # Build for production
 npm run start      # Start production server
 npm run lint       # Run ESLint
-npm run seed       # Seed database with sample data
 ```
 
-### Recommendation Engine (recommendation-engine/)
+### Recommendation Engine Only (recommendation-engine/)
 
 ```bash
 python app.py           # Start Flask server
 python test_api.py      # Test API endpoints
-./start.sh             # Unix start script
-start.bat              # Windows start script
 ```
 
 ### Docker (Entire Stack)

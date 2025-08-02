@@ -1,5 +1,6 @@
 'use client';
 
+import ProductCard from '@/components/ProductCard';
 import { IProduct } from '@/models/Product';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -11,13 +12,48 @@ interface ApiResponse {
   data: IProduct;
 }
 
+interface RecommendationsResponse {
+  success: boolean;
+  recommendations: string[];
+}
+
 export default function ProductPage() {
   const params = useParams();
   const productId = params.id as string;
   
   const [product, setProduct] = useState<IProduct | null>(null);
+  const [recommendations, setRecommendations] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Track user behavior
+  const trackBehavior = async (action: string, metadata: any = {}) => {
+    try {
+      const userId = sessionStorage.getItem('userId') || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      sessionStorage.setItem('userId', userId);
+
+      await fetch('/api/track-behavior', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          action,
+          productId: productId,
+          metadata: {
+            category: product?.category || 'unknown',
+            price: product?.price || 0,
+            brand: product?.brand || 'unknown',
+            ...metadata
+          }
+        })
+      });
+    } catch (error) {
+      console.warn('Error tracking behavior:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -33,6 +69,14 @@ export default function ProductPage() {
         
         if (data.success) {
           setProduct(data.data);
+          
+          // Track product view
+          setTimeout(() => {
+            trackBehavior('view', { timeSpent: 2000 });
+          }, 2000);
+          
+          // Fetch recommendations after product is loaded
+          fetchRecommendations();
         } else {
           throw new Error('Product not found');
         }
@@ -41,6 +85,57 @@ export default function ProductPage() {
         console.error('Error fetching product:', err);
       } finally {
         setLoading(false);
+      }
+    };
+
+    const fetchRecommendations = async () => {
+      try {
+        setLoadingRecommendations(true);
+        const userId = sessionStorage.getItem('userId') || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        sessionStorage.setItem('userId', userId);
+
+        const response = await fetch('/api/recommendations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            purchaseHistory: [productId], // Include current product in history for content-based recommendations
+            numRecommendations: 4
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.recommendations) {
+            // Fetch full product details for recommendations
+            const recommendedProducts = await Promise.all(
+              data.recommendations.map(async (recommendedProductId: string) => {
+                try {
+                  // Don't recommend the current product
+                  if (recommendedProductId === productId) return null;
+                  
+                  const productResponse = await fetch(`/api/products/${recommendedProductId}`);
+                  if (productResponse.ok) {
+                    const productData = await productResponse.json();
+                    return productData.success ? productData.data : null;
+                  }
+                  return null;
+                } catch {
+                  return null;
+                }
+              })
+            );
+            
+            const validRecommendations = recommendedProducts.filter(Boolean);
+            setRecommendations(validRecommendations);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching recommendations:', err);
+      } finally {
+        setLoadingRecommendations(false);
       }
     };
 
@@ -137,9 +232,15 @@ export default function ProductPage() {
               <div className="space-y-4">
                 <button 
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md font-medium text-lg transition-colors duration-200"
-                  onClick={() => {
-                    // TODO: Add to cart functionality
+                  onClick={async () => {
                     console.log('Add to cart:', product._id);
+                    
+                    // Track add to cart behavior
+                    await trackBehavior('add_to_cart', {
+                      action: 'add_to_cart',
+                      value: product.price
+                    });
+                    
                     alert('Added to cart! (Cart functionality coming soon)');
                   }}
                 >
@@ -148,9 +249,14 @@ export default function ProductPage() {
                 
                 <button 
                   className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 px-6 rounded-md font-medium text-lg transition-colors duration-200"
-                  onClick={() => {
-                    // TODO: Add to wishlist functionality
+                  onClick={async () => {
                     console.log('Add to wishlist:', product._id);
+                    
+                    // Track wishlist behavior
+                    await trackBehavior('add_to_wishlist', {
+                      action: 'add_to_wishlist'
+                    });
+                    
                     alert('Added to wishlist! (Wishlist functionality coming soon)');
                   }}
                 >
@@ -173,14 +279,39 @@ export default function ProductPage() {
           </div>
         </div>
 
-        {/* Related Products Placeholder */}
+        {/* AI-Powered Related Products */}
         <div className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
-          <div className="bg-white rounded-lg p-8 text-center">
-            <p className="text-gray-600">
-              🤖 AI-powered related product recommendations will appear here once the recommendation engine is implemented.
-            </p>
-          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            🤖 You Might Also Like
+          </h2>
+          
+          {loadingRecommendations ? (
+            <div className="bg-white rounded-lg p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="text-gray-600 mt-4">Finding perfect recommendations for you...</p>
+            </div>
+          ) : recommendations.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {recommendations.map((recommendedProduct) => (
+                <ProductCard 
+                  key={recommendedProduct._id} 
+                  product={recommendedProduct} 
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg p-8 text-center">
+              <p className="text-gray-600">
+                🔍 No recommendations available yet. Browse more products to get personalized AI recommendations!
+              </p>
+              <Link 
+                href="/" 
+                className="inline-block mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
+              >
+                Browse Products
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>
