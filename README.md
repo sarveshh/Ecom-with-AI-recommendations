@@ -46,11 +46,13 @@ python app.py                     # Starts on http://localhost:5000
 ### 4. Setup MongoDB
 
 **Option A: Local MongoDB**
+
 ```bash
 mongod  # Start MongoDB service
 ```
 
 **Option B: MongoDB Atlas**
+
 1. Create account at [MongoDB Atlas](https://www.mongodb.com/atlas)
 2. Create cluster and get connection string
 3. Update `MONGODB_URI` in `aiecom/.env.local`
@@ -111,6 +113,7 @@ graph TB
 ### Next.js API (Port 3000)
 
 **Products API:**
+
 - `GET /api/products` - List all products
 - `POST /api/products` - Create product
 - `GET /api/products/[id]` - Get single product
@@ -120,10 +123,12 @@ graph TB
 ### Python Recommendation API (Port 5000)
 
 **Recommendations API:**
+
 - `GET /health` - Health check
 - `POST /recommendations` - Get AI recommendations
 
 **Example Request:**
+
 ```json
 {
   "userId": "user123",
@@ -135,6 +140,7 @@ graph TB
 ## 🛠️ Development Commands
 
 ### Frontend (aiecom/)
+
 ```bash
 npm run dev        # Start development server
 npm run build      # Build for production
@@ -144,6 +150,7 @@ npm run seed       # Seed database with sample data
 ```
 
 ### Recommendation Engine (recommendation-engine/)
+
 ```bash
 python app.py           # Start Flask server
 python test_api.py      # Test API endpoints
@@ -152,6 +159,7 @@ start.bat              # Windows start script
 ```
 
 ### Docker (Entire Stack)
+
 ```bash
 docker-compose up      # Start all services
 docker-compose down    # Stop all services
@@ -161,23 +169,27 @@ docker-compose build   # Rebuild images
 ## 🚢 Deployment Options
 
 ### Option 1: Traditional Deployment
+
 - **Frontend**: Deploy to Vercel, Netlify, or AWS Amplify
 - **API**: Deploy to Railway, Render, or AWS EC2
 - **Recommendation Engine**: Deploy to Heroku, AWS Lambda, or Google Cloud Run
 - **Database**: MongoDB Atlas
 
 ### Option 2: Docker Deployment
+
 ```bash
 docker-compose up -d    # Run entire stack in containers
 ```
 
 ### Option 3: Kubernetes
+
 - Use the provided Docker images for K8s deployment
 - Configure services, ingress, and persistent volumes
 
 ## 🧪 Testing
 
 ### Frontend Testing
+
 ```bash
 cd aiecom
 npm test               # Run Jest tests (when implemented)
@@ -185,6 +197,7 @@ npm run test:e2e       # Run Playwright tests (when implemented)
 ```
 
 ### API Testing
+
 ```bash
 cd recommendation-engine
 python test_api.py     # Test recommendation API endpoints
@@ -193,6 +206,7 @@ python test_api.py     # Test recommendation API endpoints
 ## 🔧 Environment Variables
 
 ### Frontend (.env.local)
+
 ```env
 MONGODB_URI=mongodb://localhost:27017/aiecom
 NEXTAUTH_SECRET=your-secret-key
@@ -201,6 +215,7 @@ RECOMMENDATION_API_URL=http://localhost:5000
 ```
 
 ### Recommendation Engine
+
 ```env
 FLASK_ENV=production
 FLASK_APP=app.py
@@ -209,6 +224,7 @@ FLASK_APP=app.py
 ## 🎯 Roadmap
 
 ### Phase 1: Core E-commerce ✅
+
 - [x] Product catalog
 - [x] Product CRUD operations
 - [x] Admin panel
@@ -219,6 +235,7 @@ FLASK_APP=app.py
 - [ ] Checkout process
 
 ### Phase 2: AI/ML Enhancement
+
 - [ ] Advanced recommendation algorithms
 - [ ] User behavior tracking
 - [ ] Real-time personalization
@@ -226,6 +243,7 @@ FLASK_APP=app.py
 - [ ] Analytics dashboard
 
 ### Phase 3: Production Features
+
 - [ ] Payment integration (Stripe)
 - [ ] Order management
 - [ ] Email notifications

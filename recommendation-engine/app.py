@@ -1,8 +1,12 @@
 import logging
 import random
+import time
+from datetime import datetime
 
+import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from ml_recommender import MLRecommendationEngine
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -12,39 +16,88 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-# Sample product IDs for recommendations (in a real app, this would come from your database)
-SAMPLE_PRODUCT_IDS = [
-    "672a1b2c3d4e5f6789012345",
-    "672a1b2c3d4e5f6789012346",
-    "672a1b2c3d4e5f6789012347",
-    "672a1b2c3d4e5f6789012348",
-    "672a1b2c3d4e5f6789012349",
-    "672a1b2c3d4e5f678901234a",
-    "672a1b2c3d4e5f678901234b",
-    "672a1b2c3d4e5f678901234c",
-]
+# Initialize ML recommendation engine
+ml_engine = MLRecommendationEngine()
 
-# Dummy recommendation logic based on user patterns
-USER_PREFERENCE_PATTERNS = {
-    "electronics": [
+# Configuration
+NEXT_JS_API_URL = "http://localhost:3000/api/products"
+
+# Cache for product IDs (refreshed periodically)
+PRODUCT_CACHE = {"ids": [], "last_updated": 0, "cache_duration": 300}  # 5 minutes
+
+
+def get_product_ids():
+    """
+    Fetch real product IDs and features from the Next.js API
+    Uses caching to avoid frequent API calls and updates ML engine with product features
+    """
+    current_time = time.time()
+
+    # Check if cache is still valid
+    if (current_time - PRODUCT_CACHE["last_updated"]) < PRODUCT_CACHE[
+        "cache_duration"
+    ] and PRODUCT_CACHE["ids"]:
+        return PRODUCT_CACHE["ids"]
+
+    try:
+        # Fetch products from Next.js API
+        response = requests.get(NEXT_JS_API_URL, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("success") and data.get("data"):
+                products = data["data"]
+                product_ids = []
+
+                # Update both cache and ML engine
+                for product in products:
+                    product_id = str(product.get("_id", ""))
+                    if product_id:
+                        product_ids.append(product_id)
+
+                        # Add product features to ML engine
+                        features = {
+                            "name": product.get("name", ""),
+                            "description": product.get("description", ""),
+                            "category": product.get("category", ""),
+                            "price": product.get("price", 0),
+                            "brand": product.get("brand", ""),
+                            "tags": product.get("tags", []),
+                        }
+                        ml_engine.add_product_features(product_id, features)
+
+                # Update cache
+                PRODUCT_CACHE["ids"] = product_ids
+                PRODUCT_CACHE["last_updated"] = current_time
+
+                logger.info(
+                    f"Updated product cache with {len(product_ids)} products and ML features"
+                )
+                return product_ids
+    except Exception as e:
+        logger.warning(f"Failed to fetch products from API: {str(e)}")
+
+    # Fallback to sample product IDs if API fails
+    fallback_ids = [
         "672a1b2c3d4e5f6789012345",
         "672a1b2c3d4e5f6789012346",
         "672a1b2c3d4e5f6789012347",
-    ],
-    "accessories": ["672a1b2c3d4e5f6789012348", "672a1b2c3d4e5f6789012349"],
-    "gaming": ["672a1b2c3d4e5f678901234a", "672a1b2c3d4e5f678901234b"],
-    "default": [
-        "672a1b2c3d4e5f6789012345",
         "672a1b2c3d4e5f6789012348",
+        "672a1b2c3d4e5f6789012349",
         "672a1b2c3d4e5f678901234a",
-    ],
-}
+        "672a1b2c3d4e5f678901234b",
+        "672a1b2c3d4e5f678901234c",
+    ]
+
+    if not PRODUCT_CACHE["ids"]:
+        PRODUCT_CACHE["ids"] = fallback_ids
+        PRODUCT_CACHE["last_updated"] = current_time
+
+    return PRODUCT_CACHE["ids"]
 
 
 def generate_recommendations(user_id, purchase_history, num_recommendations=5):
     """
-    Generate product recommendations based on user ID and purchase history.
-    This is a dummy implementation - in production, this would use ML models.
+    Generate product recommendations using advanced ML algorithms.
 
     Args:
         user_id (str): The user identifier
@@ -55,53 +108,59 @@ def generate_recommendations(user_id, purchase_history, num_recommendations=5):
         list: List of recommended product IDs
     """
     try:
-        recommendations = []
+        # Ensure we have product data
+        get_product_ids()
 
-        # Simple recommendation logic based on user ID pattern
-        if user_id:
-            user_hash = hash(user_id) % len(USER_PREFERENCE_PATTERNS)
-            pattern_keys = list(USER_PREFERENCE_PATTERNS.keys())
-            preferred_category = pattern_keys[user_hash]
+        # Check if we should retrain models
+        if ml_engine.should_retrain():
+            logger.info("Retraining ML models with new data...")
+            ml_engine.retrain_models()
 
-            # Get products from preferred category
-            category_products = USER_PREFERENCE_PATTERNS.get(
-                preferred_category, USER_PREFERENCE_PATTERNS["default"]
-            )
-            recommendations.extend(category_products)
+        # Try ML-based hybrid recommendations first
+        recommendations = ml_engine.get_hybrid_recommendations(
+            user_id=user_id,
+            recent_products=purchase_history,
+            n_recommendations=num_recommendations,
+        )
 
-        # Add collaborative filtering simulation
-        if purchase_history:
-            # Simulate "users who bought this also bought" logic
-            for product_id in purchase_history[-2:]:  # Look at last 2 purchases
-                # Simple hash-based recommendation
-                product_hash = hash(product_id) % len(SAMPLE_PRODUCT_IDS)
-                similar_products = SAMPLE_PRODUCT_IDS[product_hash : product_hash + 2]
-                recommendations.extend(similar_products)
+        # If ML recommendations are insufficient, fall back to content-based
+        if len(recommendations) < num_recommendations and purchase_history:
+            for product_id in purchase_history[-3:]:  # Last 3 products
+                content_recs = ml_engine.get_content_recommendations(
+                    product_id, num_recommendations - len(recommendations)
+                )
+                for rec in content_recs:
+                    if rec not in recommendations and rec not in purchase_history:
+                        recommendations.append(rec)
+                        if len(recommendations) >= num_recommendations:
+                            break
 
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_recommendations = []
-        for product_id in recommendations:
-            if product_id not in seen and product_id not in purchase_history:
-                seen.add(product_id)
-                unique_recommendations.append(product_id)
+        # If still insufficient, add popular products
+        if len(recommendations) < num_recommendations:
+            product_ids = get_product_ids()
+            for product_id in product_ids:
+                if (
+                    product_id not in recommendations
+                    and product_id not in purchase_history
+                    and len(recommendations) < num_recommendations
+                ):
+                    recommendations.append(product_id)
 
-        # If we don't have enough recommendations, add random ones
-        while len(unique_recommendations) < num_recommendations:
-            random_product = random.choice(SAMPLE_PRODUCT_IDS)
-            if (
-                random_product not in unique_recommendations
-                and random_product not in purchase_history
-            ):
-                unique_recommendations.append(random_product)
-
-        # Return the requested number of recommendations
-        return unique_recommendations[:num_recommendations]
+        logger.info(
+            f"Generated {len(recommendations)} ML-based recommendations for user {user_id}"
+        )
+        return recommendations[:num_recommendations]
 
     except Exception as e:
-        logger.error(f"Error generating recommendations: {str(e)}")
-        # Return default recommendations on error
-        return USER_PREFERENCE_PATTERNS["default"][:num_recommendations]
+        logger.error(f"Error generating ML recommendations: {str(e)}")
+        # Fallback to simple random recommendations
+        product_ids = get_product_ids()
+        if product_ids:
+            available_products = [p for p in product_ids if p not in purchase_history]
+            return random.sample(
+                available_products, min(num_recommendations, len(available_products))
+            )
+        return []
 
 
 @app.route("/health", methods=["GET"])
@@ -242,6 +301,235 @@ def get_recommendations():
                     "error": "Internal server error",
                     "message": "An unexpected error occurred while generating recommendations",
                 }
+            ),
+            500,
+        )
+
+
+@app.route("/track-behavior", methods=["POST"])
+def track_user_behavior():
+    """
+    Track user behavior for ML learning
+
+    Expected JSON payload:
+    {
+        "userId": "string",
+        "action": "view|cart|purchase|like|share",
+        "productId": "string",
+        "metadata": {
+            "category": "string",
+            "price": number,
+            "brand": "string",
+            "timeSpent": number
+        }
+    }
+    """
+    try:
+        if not request.is_json:
+            return (
+                jsonify(
+                    {"success": False, "error": "Content-Type must be application/json"}
+                ),
+                400,
+            )
+
+        data = request.get_json()
+
+        # Validate required fields
+        required_fields = ["userId", "action", "productId"]
+        for field in required_fields:
+            if field not in data:
+                return (
+                    jsonify(
+                        {"success": False, "error": f"Missing required field: {field}"}
+                    ),
+                    400,
+                )
+
+        user_id = data["userId"]
+        action = data["action"]
+        product_id = data["productId"]
+        metadata = data.get("metadata", {})
+
+        # Validate action type
+        valid_actions = ["view", "cart", "purchase", "like", "share"]
+        if action not in valid_actions:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": f"Invalid action. Must be one of: {', '.join(valid_actions)}",
+                    }
+                ),
+                400,
+            )
+
+        # Track behavior in ML engine
+        ml_engine.track_user_behavior(user_id, action, product_id, metadata)
+
+        logger.info(f"Tracked behavior: {user_id} {action} {product_id}")
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "Behavior tracked successfully",
+                    "userId": user_id,
+                    "action": action,
+                    "productId": product_id,
+                    "timestamp": datetime.now().isoformat(),
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        logger.error(f"Error tracking behavior: {str(e)}")
+        return (
+            jsonify(
+                {"success": False, "error": "Internal server error", "message": str(e)}
+            ),
+            500,
+        )
+
+
+@app.route("/retrain-models", methods=["POST"])
+def retrain_models():
+    """
+    Manually trigger model retraining
+    """
+    try:
+        logger.info("Manual model retraining triggered")
+
+        # Ensure we have product data
+        get_product_ids()
+
+        # Retrain models
+        ml_engine.retrain_models()
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "Models retrained successfully",
+                    "timestamp": datetime.now().isoformat(),
+                    "modelVersion": ml_engine.model_version,
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        logger.error(f"Error retraining models: {str(e)}")
+        return (
+            jsonify(
+                {"success": False, "error": "Internal server error", "message": str(e)}
+            ),
+            500,
+        )
+
+
+@app.route("/model-status", methods=["GET"])
+def get_model_status():
+    """
+    Get current ML model status and statistics
+    """
+    try:
+        # Get basic statistics
+        num_users = len(ml_engine.user_behaviors)
+        num_products = len(ml_engine.product_features)
+
+        total_behaviors = sum(
+            len(behaviors) for behaviors in ml_engine.user_behaviors.values()
+        )
+
+        # Check if models are trained
+        models_trained = {
+            "collaborative_filtering": ml_engine.svd_model is not None,
+            "content_based": ml_engine.content_vectorizer is not None,
+            "user_preferences": len(ml_engine.user_preferences) > 0,
+        }
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "modelVersion": ml_engine.model_version,
+                    "lastTraining": (
+                        ml_engine.last_training.isoformat()
+                        if ml_engine.last_training
+                        else None
+                    ),
+                    "statistics": {
+                        "numUsers": num_users,
+                        "numProducts": num_products,
+                        "totalBehaviors": total_behaviors,
+                    },
+                    "modelsTrained": models_trained,
+                    "shouldRetrain": ml_engine.should_retrain(),
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting model status: {str(e)}")
+        return (
+            jsonify(
+                {"success": False, "error": "Internal server error", "message": str(e)}
+            ),
+            500,
+        )
+
+
+@app.route("/user-profile/<user_id>", methods=["GET"])
+def get_user_profile(user_id):
+    """
+    Get user profile and preferences
+    """
+    try:
+        if user_id not in ml_engine.user_preferences:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "User not found",
+                        "message": f"No profile found for user {user_id}",
+                    }
+                ),
+                404,
+            )
+
+        user_behaviors = ml_engine.user_behaviors.get(user_id, [])
+        user_preferences = ml_engine.user_preferences.get(user_id, {})
+
+        # Calculate behavior summary
+        behavior_summary = {}
+        for behavior in user_behaviors:
+            action = behavior["action"]
+            behavior_summary[action] = behavior_summary.get(action, 0) + 1
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "userId": user_id,
+                    "totalBehaviors": len(user_behaviors),
+                    "behaviorSummary": behavior_summary,
+                    "preferences": user_preferences,
+                    "profileCreated": (
+                        user_behaviors[0]["timestamp"] if user_behaviors else None
+                    ),
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting user profile: {str(e)}")
+        return (
+            jsonify(
+                {"success": False, "error": "Internal server error", "message": str(e)}
             ),
             500,
         )

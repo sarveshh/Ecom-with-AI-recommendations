@@ -6,6 +6,9 @@ export interface IProduct {
   price: number;
   description?: string;
   imageUrl?: string;
+  category?: string;
+  brand?: string;
+  tags?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +32,18 @@ const ProductSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  category: {
+    type: String,
+    trim: true,
+  },
+  brand: {
+    type: String,
+    trim: true,
+  },
+  tags: [{
+    type: String,
+    trim: true,
+  }],
 }, {
   timestamps: true,
 });

@@ -23,25 +23,28 @@ A modern e-commerce platform built with Next.js 14, TypeScript, Tailwind CSS, an
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - MongoDB (local installation or MongoDB Atlas)
 - npm or yarn
 
 ### Installation
 
 1. **Navigate to the project directory**
+
    ```bash
    cd AIEcom/aiecom
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**
-   
+
    The `.env.local` file has been created with default values:
+
    ```env
    MONGODB_URI=mongodb://localhost:27017/aiecom
    NEXTAUTH_SECRET=your-secret-key-here
@@ -50,24 +53,27 @@ A modern e-commerce platform built with Next.js 14, TypeScript, Tailwind CSS, an
    ```
 
 4. **Start MongoDB**
-   
+
    If using local MongoDB:
+
    ```bash
    mongod
    ```
 
 5. **Seed the database (optional)**
+
    ```bash
    npm run seed
    ```
 
 6. **Start the development server**
+
    ```bash
    npm run dev
    ```
 
 7. **Open your browser**
-   
+
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## Project Structure
@@ -105,6 +111,7 @@ AIEcom/
 ## API Endpoints
 
 ### Products
+
 - `GET /api/products` - Get all products
 - `POST /api/products` - Create a new product
 - `GET /api/products/[id]` - Get a specific product
@@ -120,6 +127,7 @@ AIEcom/
 ## Database Schema
 
 ### Product
+
 ```typescript
 {
   _id: ObjectId,
@@ -171,11 +179,13 @@ The recommendation engine will run on `http://localhost:5000`
 ## MongoDB Setup
 
 ### Option 1: Local MongoDB
+
 1. Install MongoDB locally
 2. Start MongoDB service
 3. The app will connect to `mongodb://localhost:27017/aiecom`
 
 ### Option 2: MongoDB Atlas (Recommended)
+
 1. Create account at [MongoDB Atlas](https://www.mongodb.com/atlas)
 2. Create a new cluster
 3. Get connection string
@@ -184,17 +194,20 @@ The recommendation engine will run on `http://localhost:5000`
 ## Upcoming Features
 
 ### Phase 1 - Core E-commerce
+
 - [ ] User authentication
 - [ ] Shopping cart
 - [ ] Checkout process
 - [ ] Order management
 
 ### Phase 2 - AI Integration
+
 - [ ] Python recommendation engine
 - [ ] Collaborative filtering
 - [ ] Real-time recommendations
 
 ### Phase 3 - Advanced Features
+
 - [ ] Payment integration
 - [ ] Reviews and ratings
 - [ ] Search and filtering
