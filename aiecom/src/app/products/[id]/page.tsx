@@ -2,10 +2,12 @@
 
 import ProductCard from '@/components/ProductCard';
 import { IProduct } from '@/models/Product';
+import { useCartStore } from '@/store/cartStore';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { FaHeart, FaShoppingCart } from 'react-icons/fa';
 
 interface ApiResponse {
   success: boolean;
@@ -26,6 +28,10 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
+
+  const { addItem } = useCartStore();
 
   // Track user behavior
   const trackBehavior = async (action: string, metadata: any = {}) => {
@@ -231,36 +237,73 @@ export default function ProductPage() {
               {/* Add to Cart Button */}
               <div className="space-y-4">
                 <button 
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md font-medium text-lg transition-colors duration-200"
+                  className={`w-full flex items-center justify-center gap-3 py-3 px-6 rounded-md font-medium text-lg transition-all duration-200 ${
+                    isAddingToCart 
+                      ? 'bg-green-600 text-white cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700 text-white hover:scale-105'
+                  }`}
                   onClick={async () => {
-                    console.log('Add to cart:', product._id);
+                    if (isAddingToCart) return;
                     
-                    // Track add to cart behavior
-                    await trackBehavior('add_to_cart', {
-                      action: 'add_to_cart',
-                      value: product.price
-                    });
+                    setIsAddingToCart(true);
                     
-                    alert('Added to cart! (Cart functionality coming soon)');
+                    try {
+                      // Add to cart using Zustand store
+                      addItem(product, 1);
+                      
+                      // Track add to cart behavior
+                      await trackBehavior('add_to_cart', {
+                        action: 'add_to_cart',
+                        quantity: 1,
+                        value: product.price
+                      });
+                      
+                      console.log('Added to cart:', product.name);
+                    } catch (error) {
+                      console.error('Error adding to cart:', error);
+                    } finally {
+                      setTimeout(() => {
+                        setIsAddingToCart(false);
+                      }, 1500);
+                    }
                   }}
+                  disabled={isAddingToCart}
                 >
-                  Add to Cart
+                  <FaShoppingCart size={20} />
+                  {isAddingToCart ? 'Added to Cart!' : 'Add to Cart'}
                 </button>
                 
                 <button 
-                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 px-6 rounded-md font-medium text-lg transition-colors duration-200"
+                  className={`w-full flex items-center justify-center gap-3 py-3 px-6 rounded-md font-medium text-lg transition-all duration-200 ${
+                    isAddingToWishlist 
+                      ? 'bg-pink-600 text-white cursor-not-allowed' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-800 hover:scale-105'
+                  }`}
                   onClick={async () => {
-                    console.log('Add to wishlist:', product._id);
+                    if (isAddingToWishlist) return;
                     
-                    // Track wishlist behavior
-                    await trackBehavior('add_to_wishlist', {
-                      action: 'add_to_wishlist'
-                    });
+                    setIsAddingToWishlist(true);
                     
-                    alert('Added to wishlist! (Wishlist functionality coming soon)');
+                    try {
+                      // Track wishlist behavior
+                      await trackBehavior('add_to_wishlist', {
+                        action: 'add_to_wishlist'
+                      });
+                      
+                      console.log('Added to wishlist:', product.name);
+                      // TODO: Implement actual wishlist functionality
+                    } catch (error) {
+                      console.error('Error adding to wishlist:', error);
+                    } finally {
+                      setTimeout(() => {
+                        setIsAddingToWishlist(false);
+                      }, 1500);
+                    }
                   }}
+                  disabled={isAddingToWishlist}
                 >
-                  Add to Wishlist
+                  <FaHeart size={18} />
+                  {isAddingToWishlist ? 'Added to Wishlist!' : 'Add to Wishlist'}
                 </button>
               </div>
 

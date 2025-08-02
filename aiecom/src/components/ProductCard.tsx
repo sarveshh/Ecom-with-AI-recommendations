@@ -1,7 +1,9 @@
 import { IProduct } from '@/models/Product';
+import { useCartStore } from '@/store/cartStore';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { FaShoppingCart } from 'react-icons/fa';
 
 interface ProductCardProps {
   product: IProduct;
@@ -11,7 +13,9 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product, priority = false }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [hasTrackedView, setHasTrackedView] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const viewStartTime = useRef<number>(0);
+  const { addItem } = useCartStore();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -84,23 +88,30 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, priority = false }) 
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent Link navigation
+    e.stopPropagation(); // Prevent event bubbling
     
-    // Track cart action
-    await trackBehavior('cart');
+    setIsAdding(true);
     
-    // TODO: Add actual cart functionality
-    console.log('Add to cart:', product._id);
-    
-    // Show feedback to user
-    const button = e.currentTarget as HTMLButtonElement;
-    const originalText = button.textContent;
-    button.textContent = 'Added!';
-    button.disabled = true;
-    
-    setTimeout(() => {
-      button.textContent = originalText;
-      button.disabled = false;
-    }, 2000);
+    try {
+      // Add to cart using Zustand store
+      addItem(product, 1);
+      
+      // Track cart action for AI recommendations
+      await trackBehavior('add_to_cart', {
+        action: 'add_to_cart',
+        quantity: 1,
+        value: product.price
+      });
+      
+      console.log('Added to cart:', product.name);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    } finally {
+      // Reset button state
+      setTimeout(() => {
+        setIsAdding(false);
+      }, 1500);
+    }
   };
 
   return (
@@ -140,10 +151,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, priority = false }) 
             </span>
             
             <button 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 disabled:bg-gray-400"
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                isAdding 
+                  ? 'bg-green-600 text-white cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700 text-white hover:scale-105'
+              }`}
               onClick={handleAddToCart}
+              disabled={isAdding}
             >
-              Add to Cart
+              <FaShoppingCart size={14} />
+              {isAdding ? 'Added!' : 'Add to Cart'}
             </button>
           </div>
         </div>
