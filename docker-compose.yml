@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: aiecom-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: aiecom
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - aiecom-network
+
+  # Next.js E-commerce Frontend & API
+  ecommerce-app:
+    build:
+      context: ./aiecom
+      dockerfile: Dockerfile
+    container_name: aiecom-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/aiecom
+      - NEXTAUTH_SECRET=your-secret-key-here
+      - NEXTAUTH_URL=http://localhost:3000
+      - RECOMMENDATION_API_URL=http://recommendation-engine:5000
+    depends_on:
+      - mongodb
+      - recommendation-engine
+    networks:
+      - aiecom-network
+
+  # Python AI Recommendation Engine
+  recommendation-engine:
+    build:
+      context: ./recommendation-engine
+      dockerfile: Dockerfile
+    container_name: aiecom-recommendations
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+    networks:
+      - aiecom-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  aiecom-network:
+    driver: bridge
