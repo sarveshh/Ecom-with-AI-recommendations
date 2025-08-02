@@ -1,6 +1,7 @@
 'use client';
 
 import ProductCard from '@/components/ProductCard';
+import NewsletterSignup from '@/components/NewsletterSignup';
 import { IProduct } from '@/models/Product';
 import { useEffect, useState } from 'react';
 
@@ -109,6 +110,9 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Newsletter Signup */}
+        <NewsletterSignup variant="inline" />
+
         {/* AI Recommendations Section */}
         {recommendations.length > 0 && (
           <section className="mb-12">

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { FaChartLine, FaBox, FaShoppingCart, FaUsers, FaEnvelope, FaCog } from 'react-icons/fa';
 import { useState } from 'react';
 
 interface ProductForm {
@@ -19,6 +20,7 @@ export default function AdminPage() {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showProductForm, setShowProductForm] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -77,12 +79,11 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
             <Link 
               href="/" 
               className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md font-medium transition-colors"
@@ -90,24 +91,135 @@ export default function AdminPage() {
               Back to Store
             </Link>
           </div>
-          <p className="mt-2 text-gray-600">Add new products to your e-commerce store</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {/* Analytics */}
+          <Link href="/admin/analytics" className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center">
+              <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg">
+                <FaChartLine color="#2563EB" size={24} />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold text-gray-900">Analytics</h3>
+                <p className="text-gray-600">View sales & user data</p>
+              </div>
+            </div>
+          </Link>
+
+          {/* Products */}
+          <div 
+            onClick={() => setShowProductForm(!showProductForm)}
+            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer"
+          >
+            <div className="flex items-center">
+              <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg">
+                <FaBox color="#059669" size={24} />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold text-gray-900">Products</h3>
+                <p className="text-gray-600">Manage inventory</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Orders */}
+          <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer">
+            <div className="flex items-center">
+              <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg">
+                <FaShoppingCart color="#7C3AED" size={24} />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold text-gray-900">Orders</h3>
+                <p className="text-gray-600">View & process orders</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Customers */}
+          <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer">
+            <div className="flex items-center">
+              <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-lg">
+                <FaUsers color="#D97706" size={24} />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold text-gray-900">Customers</h3>
+                <p className="text-gray-600">Manage users</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Email Marketing */}
+          <Link href="/admin/email" className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center">
+              <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-lg">
+                <FaEnvelope color="#DC2626" size={24} />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold text-gray-900">Email Marketing</h3>
+                <p className="text-gray-600">Campaigns & newsletters</p>
+              </div>
+            </div>
+          </Link>
+
+          {/* Settings */}
+          <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer">
+            <div className="flex items-center">
+              <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-lg">
+                <FaCog color="#6B7280" size={24} />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold text-gray-900">Settings</h3>
+                <p className="text-gray-600">System configuration</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* System Status */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">System Status</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">Database Connection</span>
+              <span className="flex items-center text-green-600 font-medium">
+                <div className="w-2 h-2 bg-green-600 rounded-full mr-2"></div>
+                Online
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">ML Recommendation Engine</span>
+              <span className="flex items-center text-green-600 font-medium">
+                <div className="w-2 h-2 bg-green-600 rounded-full mr-2"></div>
+                Active
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">Payment Gateway</span>
+              <span className="flex items-center text-green-600 font-medium">
+                <div className="w-2 h-2 bg-green-600 rounded-full mr-2"></div>
+                Connected
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Add Product Form */}
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Add New Product</h2>
-          
-          {message && (
-            <div className={`mb-6 p-4 rounded-md ${
-              message.type === 'success' 
-                ? 'bg-green-50 border border-green-200 text-green-800'
-                : 'bg-red-50 border border-red-200 text-red-800'
-            }`}>
-              {message.text}
-            </div>
-          )}
+        {/* Product Form (conditional) */}
+        {showProductForm && (
+          <div className="bg-white rounded-lg shadow-sm p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Add New Product</h2>
+            
+            {message && (
+              <div className={`mb-6 p-4 rounded-md ${
+                message.type === 'success' 
+                  ? 'bg-green-50 border border-green-200 text-green-800'
+                  : 'bg-red-50 border border-red-200 text-red-800'
+              }`}>
+                {message.text}
+              </div>
+            )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                 Product Name *
@@ -199,10 +311,11 @@ export default function AdminPage() {
               </button>
             </div>
           </form>
-        </div>
+          </div>
+        )}
 
         {/* Quick Actions */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white rounded-lg shadow-sm p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-3">
             <button
