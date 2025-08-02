@@ -1,0 +1,92 @@
+{
+  "folders": [
+    {
+      "name": "🏪 Frontend (Next.js)",
+      "path": "./aiecom"
+    },
+    {
+      "name": "🤖 AI Engine (Python)",
+      "path": "./recommendation-engine"
+    },
+    {
+      "name": "📁 Root",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "typescript.preferences.includePackageJsonAutoImports": "auto",
+    "python.defaultInterpreterPath": "./recommendation-engine/venv/bin/python",
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/__pycache__": true,
+      "**/.next": true,
+      "**/dist": true,
+      "**/.git": false
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/__pycache__": true,
+      "**/.next": true,
+      "**/dist": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "ms-python.flake8",
+      "bradlc.vscode-tailwindcss",
+      "esbenp.prettier-vscode",
+      "ms-vscode.vscode-typescript-next",
+      "ms-vscode.vscode-json",
+      "ms-vscode-remote.remote-containers"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Start Frontend Dev Server",
+        "type": "shell",
+        "command": "npm run dev",
+        "options": {
+          "cwd": "${workspaceFolder}/aiecom"
+        },
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "new"
+        },
+        "problemMatcher": "$tsc"
+      },
+      {
+        "label": "Start Recommendation Engine",
+        "type": "shell",
+        "command": "python app.py",
+        "options": {
+          "cwd": "${workspaceFolder}/recommendation-engine"
+        },
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "new"
+        }
+      },
+      {
+        "label": "Start Both Services",
+        "dependsOrder": "parallel",
+        "dependsOn": [
+          "Start Frontend Dev Server",
+          "Start Recommendation Engine"
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        }
+      }
+    ]
+  }
+}

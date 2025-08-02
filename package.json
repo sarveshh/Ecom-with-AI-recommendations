@@ -1,0 +1,44 @@
+{
+  "name": "aiecom-monorepo",
+  "version": "1.0.0",
+  "description": "AI-powered e-commerce platform with Next.js frontend and Python recommendation engine",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/aiecom.git"
+  },
+  "keywords": [
+    "ecommerce",
+    "ai",
+    "nextjs",
+    "python",
+    "flask",
+    "mongodb",
+    "typescript",
+    "tailwindcss",
+    "microservices"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:api\"",
+    "dev:frontend": "cd aiecom && npm run dev",
+    "dev:api": "cd recommendation-engine && python app.py",
+    "build": "cd aiecom && npm run build",
+    "start": "cd aiecom && npm start",
+    "test": "npm run test:frontend && npm run test:api",
+    "test:frontend": "cd aiecom && npm test",
+    "test:api": "cd recommendation-engine && python test_api.py",
+    "seed": "cd aiecom && npm run seed",
+    "docker:up": "docker-compose up",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "python": ">=3.8.0"
+  },
+  "workspaces": [
+    "aiecom"
+  ]
+}
