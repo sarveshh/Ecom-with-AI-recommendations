@@ -18,30 +18,42 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward to Python recommendation service
-    const response = await fetch('http://localhost:5000/track-behavior', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userId,
-        action,
-        productId,
-        metadata: metadata || {}
-      })
-    });
+    try {
+      const response = await fetch('http://localhost:5000/track-behavior', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          action,
+          productId,
+          metadata: metadata || {}
+        }),
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
 
-    if (!response.ok) {
-      throw new Error(`Recommendation service error: ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`Recommendation service error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Behavior tracked successfully',
+        data
+      });
+    } catch (fetchError) {
+      // If recommendation service is down, still return success but log the issue
+      console.warn('Recommendation service unavailable:', fetchError);
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Behavior logged (recommendation service offline)',
+        warning: 'Recommendation service is not available'
+      });
     }
-
-    const data = await response.json();
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Behavior tracked successfully',
-      data
-    });
 
   } catch (error) {
     console.error('Error tracking behavior:', error);

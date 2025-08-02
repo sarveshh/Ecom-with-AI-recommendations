@@ -76,20 +76,12 @@ def get_product_ids():
     except Exception as e:
         logger.warning(f"Failed to fetch products from API: {str(e)}")
 
-    # Fallback to sample product IDs if API fails
-    fallback_ids = [
-        "672a1b2c3d4e5f6789012345",
-        "672a1b2c3d4e5f6789012346",
-        "672a1b2c3d4e5f6789012347",
-        "672a1b2c3d4e5f6789012348",
-        "672a1b2c3d4e5f6789012349",
-        "672a1b2c3d4e5f678901234a",
-        "672a1b2c3d4e5f678901234b",
-        "672a1b2c3d4e5f678901234c",
-    ]
-
+    # If no products available, return empty list (don't use fallback fake IDs)
     if not PRODUCT_CACHE["ids"]:
-        PRODUCT_CACHE["ids"] = fallback_ids
+        logger.warning(
+            "No products available - database may be empty. Please add products via admin panel."
+        )
+        PRODUCT_CACHE["ids"] = []
         PRODUCT_CACHE["last_updated"] = current_time
 
     return PRODUCT_CACHE["ids"]
@@ -138,13 +130,18 @@ def generate_recommendations(user_id, purchase_history, num_recommendations=5):
         # If still insufficient, add popular products
         if len(recommendations) < num_recommendations:
             product_ids = get_product_ids()
-            for product_id in product_ids:
-                if (
-                    product_id not in recommendations
-                    and product_id not in purchase_history
-                    and len(recommendations) < num_recommendations
-                ):
-                    recommendations.append(product_id)
+            if product_ids:  # Only if we have actual products
+                for product_id in product_ids:
+                    if (
+                        product_id not in recommendations
+                        and product_id not in purchase_history
+                        and len(recommendations) < num_recommendations
+                    ):
+                        recommendations.append(product_id)
+            else:
+                logger.warning(
+                    "No products available for recommendations - database may be empty"
+                )
 
         logger.info(
             f"Generated {len(recommendations)} ML-based recommendations for user {user_id}"
@@ -153,13 +150,16 @@ def generate_recommendations(user_id, purchase_history, num_recommendations=5):
 
     except Exception as e:
         logger.error(f"Error generating ML recommendations: {str(e)}")
-        # Fallback to simple random recommendations
+        # Fallback to simple random recommendations only if products exist
         product_ids = get_product_ids()
         if product_ids:
             available_products = [p for p in product_ids if p not in purchase_history]
             return random.sample(
                 available_products, min(num_recommendations, len(available_products))
             )
+        else:
+            logger.warning("No products available for fallback recommendations")
+            return []
         return []
 
 

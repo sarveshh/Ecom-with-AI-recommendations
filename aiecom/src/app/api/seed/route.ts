@@ -1,7 +1,6 @@
-import mongoose from 'mongoose';
-import Product from '../src/models/Product';
-
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/aiecom';
+import dbConnect from '@/lib/mongodb';
+import Product from '@/models/Product';
+import { NextRequest, NextResponse } from 'next/server';
 
 const sampleProducts = [
   {
@@ -78,11 +77,10 @@ const sampleProducts = [
   },
 ];
 
-async function seedDatabase() {
+export async function POST(request: NextRequest) {
   try {
-    // Connect to MongoDB
-    await mongoose.connect(MONGODB_URI);
-    console.log('Connected to MongoDB');
+    // Connect to the database
+    await dbConnect();
 
     // Clear existing products
     await Product.deleteMany({});
@@ -90,17 +88,24 @@ async function seedDatabase() {
 
     // Insert sample products
     const insertedProducts = await Product.insertMany(sampleProducts);
-    console.log(`Inserted ${insertedProducts.length} sample products`);
+    console.log(`Inserted ${insertedProducts.length} products`);
 
-    console.log('Database seeding completed successfully!');
+    return NextResponse.json({
+      success: true,
+      message: `Successfully seeded database with ${insertedProducts.length} products`,
+      products: insertedProducts.map(p => ({ id: p._id, name: p.name }))
+    });
+
   } catch (error) {
     console.error('Error seeding database:', error);
-  } finally {
-    // Close the connection
-    await mongoose.connection.close();
-    console.log('Disconnected from MongoDB');
+    
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'Failed to seed database',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
   }
 }
-
-// Run the seed function
-seedDatabase();
