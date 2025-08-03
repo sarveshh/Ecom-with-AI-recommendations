@@ -1,21 +1,31 @@
 # AI-Powered E-Commerce Platform
 
-A complete full-stack e-commerce platform with AI-powered product recommendations, built using modern technologies in a microservices architecture.
+A complete full-stack e-commerce platform with AI-powered product recommendations, advanced analytics, and email marketing, built using modern technologies.
+
+## 🎯 Features
+
+- **🛒 Shopping Cart**: Zustand state management with encrypted localStorage
+- **🤖 AI Recommendations**: Real machine learning using collaborative filtering
+- **📊 Analytics Dashboard**: Comprehensive business intelligence with MongoDB aggregation
+- **📧 Email Marketing**: Newsletter signup, subscriber management, and campaigns
+- **👑 Admin Panel**: Product management, analytics, and system monitoring
+- **🔒 Security**: Encrypted local storage and secure data handling
+- **📱 Responsive Design**: Tailwind CSS with mobile-first approach
 
 ## 🏗️ Architecture
 
-This monorepo contains two main services:
+**Single Package.json Structure** (Simplified from monorepo):
 
-- **`aiecom/`** - Next.js 14 frontend and API (TypeScript, Tailwind CSS, MongoDB)
-- **`recommendation-engine/`** - Python Flask microservice for AI recommendations
+- **Frontend & API**: Next.js 15 with TypeScript, Tailwind CSS, MongoDB
+- **AI Service**: Python Flask microservice for machine learning recommendations
 
 ## 🚀 Quick Start
 
-**TL;DR: Get everything running in 3 commands:**
+**Get everything running in 3 commands:**
 
 ```bash
 git clone <your-repo-url> && cd AIEcom
-npm install && cd aiecom && npm install && cd ../recommendation-engine && pip install -r requirements.txt && cd ..
+npm install && cd recommendation-engine && pip install -r requirements.txt && cd ..
 npm run dev  # Starts both frontend and AI service!
 ```
 
@@ -24,6 +34,8 @@ npm run dev  # Starts both frontend and AI service!
 - 🌐 **Frontend**: `http://localhost:3000`
 - 🤖 **AI API**: `http://localhost:5000/health`
 - 📊 **Admin Panel**: `http://localhost:3000/admin`
+- 📧 **Analytics**: `http://localhost:3000/admin/analytics`
+- ✉️ **Email Marketing**: `http://localhost:3000/admin/email`
 
 ---
 
@@ -46,16 +58,13 @@ cd AIEcom
 ### 2. Install Dependencies
 
 ```bash
-# Root level (installs concurrently for running both services)
-npm install
-
-# Frontend dependencies
-cd aiecom
+# Install all dependencies (single package.json)
 npm install
 
 # Python dependencies
-cd ../recommendation-engine
+cd recommendation-engine
 pip install -r requirements.txt
+cd ..
 ```
 
 ### 3. Start Both Services (Single Command!)
@@ -70,7 +79,7 @@ This will start:
 - ✅ Next.js frontend on `http://localhost:3000`
 - ✅ Python recommendation API on `http://localhost:5000`
 
-**Alternative: Start services individually**
+#### Alternative: Start services individually
 
 ```bash
 # Terminal 1: Next.js
@@ -92,7 +101,7 @@ mongod  # Start MongoDB service
 
 1. Create account at [MongoDB Atlas](https://www.mongodb.com/atlas)
 2. Create cluster and get connection string  
-3. Update `MONGODB_URI` in `aiecom/.env.local`
+3. Update `MONGODB_URI` in `.env.local`
 
 #### Seed with Sample Products
 
@@ -109,42 +118,61 @@ npm run seed
 
 ## 📁 Project Structure
 
-```
+**Simplified Single Package.json Structure:**
+
+```text
 AIEcom/
-├── 📂 aiecom/                     # Next.js E-commerce Frontend & API
-│   ├── 📂 src/
-│   │   ├── 📂 app/
-│   │   │   ├── 📂 api/products/   # Product CRUD API
-│   │   │   ├── 📂 admin/          # Admin panel
-│   │   │   ├── 📂 products/[id]/  # Product detail pages
-│   │   │   ├── layout.tsx         # Root layout
-│   │   │   └── page.tsx           # Home page
-│   │   ├── 📂 components/
-│   │   │   └── ProductCard.tsx    # Product card component
-│   │   ├── 📂 lib/
-│   │   │   └── mongodb.ts         # Database connection
-│   │   ├── 📂 models/
-│   │   │   └── Product.ts         # MongoDB schemas
-│   │   └── 📂 types/
-│   │       └── mongoose.d.ts      # Type definitions
+├── 📂 src/                        # Next.js Application Source
+│   ├── 📂 app/
+│   │   ├── 📂 api/
+│   │   │   ├── 📂 products/       # Product CRUD API
+│   │   │   ├── 📂 analytics/      # Analytics API
+│   │   │   ├── 📂 newsletter/     # Email marketing API
+│   │   │   └── 📂 recommendations/# AI recommendations API
+│   │   ├── 📂 admin/
+│   │   │   ├── 📂 analytics/      # Analytics dashboard
+│   │   │   └── 📂 email/          # Email management
+│   │   ├── 📂 products/[id]/      # Product detail pages
+│   │   ├── layout.tsx             # Root layout
+│   │   └── page.tsx               # Home page with cart & newsletter
+│   ├── 📂 components/
+│   │   ├── ProductCard.tsx        # Product cards
+│   │   ├── CartButton.tsx         # Shopping cart button
+│   │   ├── CartSidebar.tsx        # Cart sidebar
+│   │   ├── AnalyticsDashboard.tsx # Analytics charts
+│   │   ├── EmailManagement.tsx    # Email subscriber management
+│   │   └── NewsletterSignup.tsx   # Newsletter subscription
+│   ├── 📂 lib/
+│   │   ├── mongodb.ts             # Database connection
+│   │   └── encryptedStorage.ts    # Secure local storage
+│   ├── 📂 models/
+│   │   ├── Product.ts             # Product schema
+│   │   ├── AnalyticsEvent.ts      # Analytics schema
+│   │   └── EmailModels.ts         # Email marketing schemas
+│   ├── 📂 store/
+│   │   └── cartStore.ts           # Zustand cart store
 │   ├── 📂 scripts/
 │   │   └── seed.ts                # Database seeding
-│   ├── package.json
-│   ├── README.md
-│   └── .env.local                 # Environment variables
+│   └── 📂 types/
+│       └── mongoose.d.ts          # Type definitions
+│
+├── 📂 public/                     # Static assets
+│   ├── favicon.ico
+│   └── *.svg                      # UI icons
 │
 ├── 📂 recommendation-engine/      # Python AI Microservice
 │   ├── app.py                     # Flask recommendation API
+│   ├── ml_recommender.py          # Machine learning models
 │   ├── requirements.txt           # Python dependencies
 │   ├── test_api.py               # API testing script
-│   ├── start.sh                  # Unix start script
-│   ├── start.bat                 # Windows start script
-│   ├── Dockerfile                # Docker configuration
 │   └── README.md                 # Service documentation
 │
-├── docker-compose.yml            # Multi-service orchestration
-├── .gitignore                    # Comprehensive gitignore
-└── README.md                     # This file
+├── package.json                  # Single consolidated package.json
+├── next.config.ts               # Next.js configuration
+├── tsconfig.json                # TypeScript configuration
+├── .env.local                   # Environment variables
+├── docker-compose.yml           # Multi-service orchestration
+└── README.md                    # This file
 ```
 
 ## 🔗 Services Communication
@@ -189,24 +217,18 @@ graph TB
 
 ## 🛠️ Development Commands
 
-### Root Level (Recommended)
+### Root Level (Single Package.json Structure)
 
 ```bash
 npm run dev              # 🚀 Start both frontend + AI API
 npm run dev:frontend     # Start only Next.js frontend
 npm run dev:api          # Start only Python recommendation API
 npm run seed             # Seed database with sample products
-npm run test             # Run all tests
+npm run build            # Build Next.js for production
+npm run start            # Start production server
+npm run lint             # Run ESLint
+npm run type-check       # Run TypeScript compiler check
 npm run docker:up        # Start with Docker Compose
-```
-
-### Frontend Only (aiecom/)
-
-```bash
-npm run dev        # Start development server
-npm run build      # Build for production
-npm run start      # Start production server
-npm run lint       # Run ESLint
 ```
 
 ### Recommendation Engine Only (recommendation-engine/)
@@ -249,8 +271,7 @@ docker-compose up -d    # Run entire stack in containers
 ### Frontend Testing
 
 ```bash
-cd aiecom
-npm test               # Run Jest tests (when implemented)
+npm run test           # Run Jest tests (when implemented)
 npm run test:e2e       # Run Playwright tests (when implemented)
 ```
 
@@ -263,13 +284,33 @@ python test_api.py     # Test recommendation API endpoints
 
 ## 🔧 Environment Variables
 
-### Frontend (.env.local)
+### Root Directory (.env.local)
 
 ```env
+# Database
 MONGODB_URI=mongodb://localhost:27017/aiecom
+
+# Encryption (generate secure 32-character keys)
+ENCRYPTION_KEY=your-32-character-encryption-key-here
+ANALYTICS_ENCRYPTION_KEY=your-analytics-encryption-key
+
+# Feature Flags
+NEXT_PUBLIC_ANALYTICS_ENABLED=true
+NEXT_PUBLIC_RECOMMENDATIONS_ENABLED=true
+NEXT_PUBLIC_EMAIL_MARKETING_ENABLED=true
+
+# Email Configuration (optional)
+SMTP_HOST=your-smtp-host
+SMTP_PORT=587
+SMTP_USER=your-email@domain.com
+SMTP_PASS=your-email-password
+
+# AI Services
+RECOMMENDATION_API_URL=http://localhost:5000
+
+# Auth (when implemented)
 NEXTAUTH_SECRET=your-secret-key
 NEXTAUTH_URL=http://localhost:3000
-RECOMMENDATION_API_URL=http://localhost:5000
 ```
 
 ### Recommendation Engine
@@ -323,8 +364,8 @@ This project is for educational purposes.
 
 ## 🆘 Support
 
-- **Frontend Issues**: Check `aiecom/README.md`
-- **Recommendation Engine**: Check `recommendation-engine/README.md`
+- **Frontend Issues**: Check Next.js documentation or create GitHub issue
+- **Recommendation Engine**: Check `recommendation-engine/README.md`  
 - **General Issues**: Open GitHub issue
 
 ## 🔗 Links
